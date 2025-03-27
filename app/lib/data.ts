@@ -12,26 +12,18 @@ import { formatCurrency } from "./utils";
 const sql = postgres(process.env.POSTGRES_URL!, {
   ssl: false, // ← Explicitly disable SSL);
 });
-/*
-const sql = postgres(process.env.POSTGRES_URL!, {
-  ssl: false, // SCRAM-SHA-256 does not require SSL unless explicitly configured
-  pass: process.env.POSTGRES_PASSWORD, // Ensure the password is correctly passed
-  transform: { undefined: null }, // Optional: handle undefined values properly
-});
-*/
 
 export async function fetchRevenue() {
   try {
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
 
-    // console.log('Fetching revenue data...');
-    // await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log('Fetching revenue data...');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const data = await sql<Revenue[]>`SELECT * FROM revenue`;
-    //const data = await sql<Revenue[]>`SELECT * FROM public.revenue`;
 
-    // console.log('Data fetch completed after 3 seconds.');
+    console.log('Data fetch completed after 3 seconds.');
 
     return data;
   } catch (error) {
