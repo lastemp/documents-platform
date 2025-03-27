@@ -23,9 +23,23 @@ const FormSchema = z.object({
   date: z.string(),
 });
 
+const CustomerFormSchema = z.object({
+  id: z.string(),
+  customerName: z.string({
+    invalid_type_error: "Please enter customer name.",
+  }),
+  email: z.string({
+    invalid_type_error: "Please enter email.",
+  }),
+  imageUrl: z.string({
+    invalid_type_error: "Please enter image url.",
+  }),
+});
+
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 // Use Zod to update the expected types
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+const CreateCustomer = CustomerFormSchema.omit({ id: true });
 
 export type State = {
   errors?: {
@@ -36,7 +50,6 @@ export type State = {
   message?: string | null;
 };
 
-//export async function createInvoice(formData: FormData) {
 export async function createInvoice(prevState: State, formData: FormData) {
   // Validate form using Zod
   const validatedFields = CreateInvoice.safeParse({
@@ -135,4 +148,32 @@ export async function authenticate(
     }
     throw error;
   }
+}
+
+export async function createCustomer(prevState: State, formData: FormData) {
+  // Validate form using Zod
+  const validatedFields = CreateCustomer.safeParse({
+    customerId: formData.get("customerId"),
+    customerName: formData.get("customerName"),
+    email: formData.get("email"),
+    imageUrl: formData.get("imageUrl"),
+  });
+
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Create Invoice.",
+    };
+  }
+}
+
+export async function deleteCustomer(id: string) {
+  try {
+    await sql`DELETE FROM customers WHERE id = ${id}`;
+  } catch (error) {
+    // We'll log the error to the console for now
+    console.error(error);
+  }
+  revalidatePath("/dashboard/customers");
 }
