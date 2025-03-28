@@ -25,15 +25,21 @@ const FormSchema = z.object({
 
 const CustomerFormSchema = z.object({
   id: z.string(),
-  customerName: z.string({
-    invalid_type_error: "Please enter customer name.",
-  }),
-  email: z.string({
-    invalid_type_error: "Please enter email.",
-  }),
-  imageUrl: z.string({
-    invalid_type_error: "Please enter image url.",
-  }),
+  name: z
+    .string({
+      invalid_type_error: "Please enter customer name.",
+    })
+    .min(1, { message: "Customer name must not be empty." }),
+  email: z
+    .string({
+      invalid_type_error: "Please enter email.",
+    })
+    .min(1, { message: "Email must not be empty." }),
+  image: z
+    .string({
+      invalid_type_error: "Please enter image url.",
+    })
+    .min(1, { message: "Image url must not be empty." }),
 });
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
@@ -46,6 +52,15 @@ export type State = {
     customerId?: string[];
     amount?: string[];
     status?: string[];
+  };
+  message?: string | null;
+};
+
+export type CustomerState = {
+  errors?: {
+    name?: string[];
+    email?: string[];
+    image?: string[];
   };
   message?: string | null;
 };
@@ -150,22 +165,41 @@ export async function authenticate(
   }
 }
 
-export async function createCustomer(prevState: State, formData: FormData) {
+export async function createCustomer(
+  prevState: CustomerState,
+  formData: FormData
+) {
   // Validate form using Zod
   const validatedFields = CreateCustomer.safeParse({
-    customerId: formData.get("customerId"),
-    customerName: formData.get("customerName"),
+    name: formData.get("name"),
     email: formData.get("email"),
-    imageUrl: formData.get("imageUrl"),
+    image: formData.get("image"),
   });
 
   // If form validation fails, return errors early. Otherwise, continue.
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Missing Fields. Failed to Create Invoice.",
+      message: "Missing Fields. Failed to Create Customer.",
     };
   }
+
+  // Prepare data for insertion into the database
+  const { name, email, image } = validatedFields.data;
+
+  // Insert data into the database
+  try {
+    await sql`
+      INSERT INTO customers (name, email, image_url)
+      VALUES (${name}, ${email}, ${image})
+    `;
+  } catch (error) {
+    // We'll log the error to the console for now
+    console.error(error);
+  }
+
+  revalidatePath("/dashboard/customers");
+  redirect("/dashboard/customers");
 }
 
 export async function deleteCustomer(id: string) {

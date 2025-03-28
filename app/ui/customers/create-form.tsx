@@ -20,7 +20,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         {/* Customer Name */}
         <div className="mb-4">
           <label htmlFor="name" className="mb-2 block text-sm font-medium">
-            Set customer name
+            Choose customer name
           </label>
           <div className="relative mt-2 rounded-md">
             <div className="relative">
@@ -48,7 +48,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         {/* Customer Email */}
         <div className="mb-4">
           <label htmlFor="email" className="mb-2 block text-sm font-medium">
-            Set email
+            Choose email
           </label>
           <div className="relative mt-2 rounded-md">
             <div className="relative">
@@ -76,7 +76,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         {/* Image Url */}
         <div className="mb-4">
           <label htmlFor="image" className="mb-2 block text-sm font-medium">
-            Set image
+            Choose image url
           </label>
           <div className="relative mt-2 rounded-md">
             <div className="relative">
