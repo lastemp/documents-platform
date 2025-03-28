@@ -186,6 +186,26 @@ export async function fetchCustomers() {
   }
 }
 
+export async function fetchCustomerById(id: string) {
+  try {
+    const customer = await sql<CustomerField>`
+      SELECT
+        id,
+        name,
+        email,
+        image_url
+      FROM customers
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+
+    return customer;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch customer.");
+  }
+}
+
 /*
 export async function fetchFilteredCustomers(query: string) {
   try {
