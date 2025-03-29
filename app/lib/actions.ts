@@ -42,11 +42,39 @@ const CustomerFormSchema = z.object({
     .min(1, { message: "Image url must not be empty." }),
 });
 
+const DocumentFormSchema = z.object({
+  id: z.string(),
+  customerId: z.string({
+    invalid_type_error: "Please select a customer.",
+  }),
+  documentType: z.enum(["agreement", "title deed", "last will"], {
+    invalid_type_error: "Please select document type.",
+  }),
+  documentName: z
+    .string({
+      invalid_type_error: "Please enter document name.",
+    })
+    .min(1, { message: "document name must not be empty." }),
+  documentDescription: z
+    .string({
+      invalid_type_error: "Please enter document description.",
+    })
+    .min(1, { message: "document name must not be empty." }),
+  documentPath: z
+    .string({
+      invalid_type_error: "Please select document path.",
+    })
+    .min(1, { message: "document path must not be empty." }),
+  date: z.string(),
+});
+
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 // Use Zod to update the expected types
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 const CreateCustomer = CustomerFormSchema.omit({ id: true });
 const UpdateCustomer = CustomerFormSchema.omit({ id: true });
+const CreateDocument = DocumentFormSchema.omit({ id: true, date: true });
+const UpdateDocument = DocumentFormSchema.omit({ id: true, date: true });
 
 export type State = {
   errors?: {
@@ -245,4 +273,101 @@ export async function deleteCustomer(id: string) {
     console.error(error);
   }
   revalidatePath("/dashboard/customers");
+}
+
+export async function createDocument(prevState: State, formData: FormData) {
+  // Validate form using Zod
+  const validatedFields = CreateDocument.safeParse({
+    customerId: formData.get("customerId"),
+    documentType: formData.get("documentType"),
+    documentName: formData.get("documentName"),
+    documentDescription: formData.get("documentDescription"),
+    documentPath: formData.get("documentPath"),
+  });
+
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Create Document.",
+    };
+  }
+
+  // Prepare data for insertion into the database
+  const {
+    customerId,
+    documentType,
+    documentName,
+    documentDescription,
+    documentPath,
+  } = validatedFields.data;
+  const date = new Date().toISOString().split("T")[0];
+
+  // Insert data into the database
+  try {
+    await sql`
+      INSERT INTO documents (customer_id, document_type, document_name, document_description, document_path, date)
+      VALUES (${customerId}, ${documentType}, ${documentName}, ${documentDescription}, ${documentPath}, ${date})
+    `;
+  } catch (error) {
+    // We'll log the error to the console for now
+    console.error(error);
+  }
+
+  revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents");
+}
+
+export async function updateDocument(
+  id: string,
+  prevState: State,
+  formData: FormData
+) {
+  const validatedFields = UpdateDocument.safeParse({
+    customerId: formData.get("customerId"),
+    documentType: formData.get("documentType"),
+    documentName: formData.get("documentName"),
+    documentDescription: formData.get("documentDescription"),
+    documentPath: formData.get("documentPath"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Update Document.",
+    };
+  }
+
+  const {
+    customerId,
+    documentType,
+    documentName,
+    documentDescription,
+    documentPath,
+  } = validatedFields.data;
+
+  try {
+    await sql`
+      UPDATE documents
+      SET customer_id = ${customerId}, document_type = ${documentType}, 
+      document_name = ${documentName}, document_description = ${documentDescription},
+      document_path = ${documentPath}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return { message: "Database Error: Failed to Update Document." };
+  }
+
+  revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents");
+}
+
+export async function deleteDocument(id: string) {
+  try {
+    await sql`DELETE FROM documents WHERE id = ${id}`;
+  } catch (error) {
+    // We'll log the error to the console for now
+    console.error(error);
+  }
+  revalidatePath("/dashboard/documents");
 }

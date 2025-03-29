@@ -6,6 +6,8 @@ import {
   InvoicesTable,
   LatestInvoiceRaw,
   Revenue,
+  DocumentsTable,
+  DocumentForm,
 } from "./definitions";
 import { formatCurrency } from "./utils";
 //const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
@@ -196,7 +198,7 @@ export async function fetchCustomerById(id: string) {
         image_url
       FROM customers
       WHERE id = ${id}
-      LIMIT 1
+      LIMIT 1;
     `;
 
     return customer;
@@ -206,40 +208,6 @@ export async function fetchCustomerById(id: string) {
   }
 }
 
-/*
-export async function fetchFilteredCustomers(query: string) {
-  try {
-    const data = await sql<CustomersTableType[]>`
-		SELECT
-		  customers.id,
-		  customers.name,
-		  customers.email,
-		  customers.image_url,
-		  COUNT(invoices.id) AS total_invoices,
-		  SUM(CASE WHEN invoices.status = 'pending' THEN invoices.amount ELSE 0 END) AS total_pending,
-		  SUM(CASE WHEN invoices.status = 'paid' THEN invoices.amount ELSE 0 END) AS total_paid
-		FROM customers
-		LEFT JOIN invoices ON customers.id = invoices.customer_id
-		WHERE
-		  customers.name ILIKE ${`%${query}%`} OR
-        customers.email ILIKE ${`%${query}%`}
-		GROUP BY customers.id, customers.name, customers.email, customers.image_url
-		ORDER BY customers.name ASC
-	  `;
-
-    const customers = data.map((customer) => ({
-      ...customer,
-      total_pending: formatCurrency(customer.total_pending),
-      total_paid: formatCurrency(customer.total_paid),
-    }));
-
-    return customers;
-  } catch (err) {
-    console.error("Database Error:", err);
-    throw new Error("Failed to fetch customer table.");
-  }
-}
-*/
 export async function fetchFilteredCustomers(
   query: string,
   currentPage: number
@@ -293,5 +261,80 @@ export async function fetchCustomersPages(query: string) {
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch total number of invoices.");
+  }
+}
+
+export async function fetchFilteredDocuments(
+  query: string,
+  currentPage: number
+) {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  try {
+    const documents = await sql<DocumentsTable[]>`
+      SELECT
+        documents.id,
+        documents.document_type as doc_type,
+        documents.document_name as doc_name,
+        documents.document_description as doc_description,
+        documents.document_path as doc_path,
+        documents.date,
+        customers.name,
+        customers.email,
+        customers.image_url
+      FROM documents
+      JOIN customers ON documents.customer_id = customers.id
+      WHERE
+        customers.name ILIKE ${`%${query}%`} OR
+        customers.email ILIKE ${`%${query}%`} OR
+        documents.date::text ILIKE ${`%${query}%`}
+      ORDER BY documents.date DESC
+      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+    `;
+
+    return documents;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch documents.");
+  }
+}
+
+export async function fetchDocumentsPages(query: string) {
+  try {
+    const data = await sql`SELECT COUNT(*)
+    FROM documents
+    JOIN customers ON documents.customer_id = customers.id
+    WHERE
+      customers.name ILIKE ${`%${query}%`} OR
+      customers.email ILIKE ${`%${query}%`} OR
+      documents.date::text ILIKE ${`%${query}%`}
+  `;
+
+    const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
+    return totalPages;
+  } catch (error) {
+    throw new Error("Failed to fetch total number of documents.");
+  }
+}
+
+export async function fetchDocumentById(id: string) {
+  try {
+    const document = await sql<DocumentForm>`
+      SELECT
+        documents.id,
+        documents.customer_id,
+        documents.document_type as doc_type,
+        documents.document_name as doc_name,
+        documents.document_description as doc_description,
+        documents.document_path as doc_path
+      FROM documents
+      WHERE documents.id = ${id}
+      LIMIT 1;
+    `;
+
+    return document[0];
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch document.");
   }
 }
