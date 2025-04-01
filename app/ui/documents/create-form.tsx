@@ -14,17 +14,6 @@ import { useState, useActionState } from 'react';
 export default function Form({ customers }: { customers: CustomerField[] }) {
   const initialState: State = { message: null, errors: {} };
   const [state, formAction] = useActionState(createDocument, initialState);
-  //const [file, setFile] = useState<File | null>(null);
-
-  /*
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setFile(event.target.files[0]);
-    }
-  };
-  */
-
-  {/* <form action={formAction}> */}
 
   return (
     <form action={formAction}>
@@ -41,6 +30,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               defaultValue=""
               aria-describedby="customer-error"
+              required
             >
               <option value="" disabled>
                 Select a customer
@@ -78,6 +68,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                   value="agreement"
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                   aria-describedby="document-type-error"
+                  required
                 />
                 <label
                   htmlFor="agreement"
@@ -94,6 +85,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                   value="title deed"
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                   aria-describedby="document-type-error"
+                  required
                 />
                 <label
                   htmlFor="title deed"
@@ -110,6 +102,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                   value="last will"
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
                   aria-describedby="document-type-error"
+                  required
                 />
                 <label
                   htmlFor="last will"
@@ -131,6 +124,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         </fieldset>
 
         {/* Document Name */}
+        {/*
         <div className="mb-4">
           <label htmlFor="documentName" className="mb-2 block text-sm font-medium">
             Choose document name
@@ -157,6 +151,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
             </div>
           </div>
         </div>
+        */ }
 
         {/* Document Description */}
         <div className="mb-4">
@@ -170,8 +165,10 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                 name="documentDescription"
                 type="string"
                 placeholder="Enter Document description"
+                maxLength="100"
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
                 aria-describedby="document-description-error"
+                required
               />
               <PencilIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
             </div>
@@ -187,6 +184,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
         </div>
 
         {/* Document Path */}
+        { /*
         <div className="mb-4">
           <label htmlFor="documentPath" className="mb-2 block text-sm font-medium">
             Choose document path
@@ -200,6 +198,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
                 placeholder="Enter Document path"
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
                 aria-describedby="document-path-error"
+                required
               />
               <PencilIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
             </div>
@@ -213,9 +212,35 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
             </div>
           </div>
         </div>
-        {/* <input type="file" onChange={handleFileChange} /> */}
-        {/* ✅ File Input */}
-        <input type="file" name="documentFile" className="mb-2 p-2 border rounded" required />
+        */ }
+
+        {/* Document File */}
+        <div className="mb-4">
+          <label htmlFor="documentFile" className="mb-2 block text-sm font-medium">
+            Choose document file
+          </label>
+          <div className="relative mt-2 rounded-md">
+            <div className="relative">
+              <input
+                id="documentFile"
+                name="documentFile"
+                type="file"
+                placeholder="Choose Document file"
+                className="peer block w-full rounded-md border border-gray-200 py-2 pl-4 text-sm outline-2 placeholder:text-gray-500"
+                aria-describedby="document-file-error"
+                required
+              />
+            </div>
+            <div id="document-file-error" aria-live="polite" aria-atomic="true">
+              {state.errors?.documentFile &&
+                state.errors.documentFile.map((error: string) => (
+                  <p className="mt-2 text-sm text-red-500" key={error}>
+                    {error}
+                  </p>
+                ))}
+            </div>
+          </div>
+        </div>
       </div>
       <div className="mt-6 flex justify-end gap-4">
         <Link

@@ -36,6 +36,7 @@ export default function EditDocumentForm({
               name="customerId"
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               defaultValue={document.customer_id}
+              disabled
             >
               <option value="" disabled>
                 Select a customer
@@ -51,7 +52,7 @@ export default function EditDocumentForm({
         </div>
 
         {/* Document Type */}
-        <fieldset>
+        <fieldset disabled>
           <legend className="mb-2 block text-sm font-medium">
             Set the document type
           </legend>
@@ -123,6 +124,7 @@ export default function EditDocumentForm({
                 defaultValue={document.doc_name}
                 placeholder="Enter Document name"
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                disabled
               />
               <PencilIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
@@ -142,7 +144,9 @@ export default function EditDocumentForm({
                 type="string"
                 defaultValue={document.doc_description}
                 placeholder="Enter Document description"
+                maxLength="100"
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                required
               />
               <PencilIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
@@ -150,6 +154,7 @@ export default function EditDocumentForm({
         </div>
 
         {/* Document Path */}
+        {/*
         <div className="mb-4">
           <label htmlFor="documentPath" className="mb-2 block text-sm font-medium">
             Choose document path
@@ -168,6 +173,7 @@ export default function EditDocumentForm({
             </div>
           </div>
         </div>
+        */ }
       </div>
       <div className="mt-6 flex justify-end gap-4">
         <Link

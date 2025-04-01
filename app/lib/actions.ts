@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
-import { saveFileToDisk } from "@/app/lib/utils-files";
+import { saveFileToDisk, getFileChecksum } from "@/app/lib/utils-files";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: false });
 
@@ -54,21 +54,28 @@ const DocumentFormSchema = z.object({
   documentType: z.enum(["agreement", "title deed", "last will"], {
     invalid_type_error: "Please select document type.",
   }),
+  /*
   documentName: z
     .string({
       invalid_type_error: "Please enter document name.",
     })
     .min(1, { message: "document name must not be empty." }),
+  */
   documentDescription: z
     .string({
       invalid_type_error: "Please enter document description.",
     })
-    .min(1, { message: "document name must not be empty." }),
+    .min(1, { message: "document description must not be empty." })
+    .toLowerCase()
+    .transform((val) => val.trim().replace(/\s+/g, " ")),
+
+  /*  
   documentPath: z
     .string({
       invalid_type_error: "Please select document path.",
     })
     .min(1, { message: "document path must not be empty." }),
+  */
   date: z.string(),
   // ✅ File validation
   documentFile: z
@@ -99,7 +106,12 @@ const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 const CreateCustomer = CustomerFormSchema.omit({ id: true });
 const UpdateCustomer = CustomerFormSchema.omit({ id: true });
 const CreateDocument = DocumentFormSchema.omit({ id: true, date: true });
-const UpdateDocument = DocumentFormSchema.omit({ id: true, date: true });
+// const UpdateDocument = DocumentFormSchema.omit({ id: true, date: true });
+const UpdateDocument = DocumentFormSchema.omit({
+  id: true,
+  date: true,
+  documentFile: true,
+});
 
 export type State = {
   errors?: {
@@ -305,18 +317,14 @@ export async function createDocument(prevState: State, formData: FormData) {
   const validatedFields = CreateDocument.safeParse({
     customerId: formData.get("customerId"),
     documentType: formData.get("documentType"),
-    documentName: formData.get("documentName"),
+    //documentName: formData.get("documentName"),
     documentDescription: formData.get("documentDescription"),
-    documentPath: formData.get("documentPath"),
+    //documentPath: formData.get("documentPath"),
     documentFile: formData.get("documentFile"),
   });
 
   // If form validation fails, return errors early. Otherwise, continue.
   if (!validatedFields.success) {
-    console.log(
-      "validatedFields errors: ",
-      validatedFields.error.flatten().fieldErrors
-    );
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: "Missing Fields. Failed to Create Document.",
@@ -327,21 +335,28 @@ export async function createDocument(prevState: State, formData: FormData) {
   const {
     customerId,
     documentType,
-    documentName,
+    //documentName,
     documentDescription,
-    documentPath,
+    //documentPath,
     documentFile,
   } = validatedFields.data;
   const date = new Date().toISOString().split("T")[0];
 
   // Insert data into the database
   try {
-    await sql`
-      INSERT INTO documents (customer_id, document_type, document_name, document_description, document_path, date)
-      VALUES (${customerId}, ${documentType}, ${documentName}, ${documentDescription}, ${documentPath}, ${date})
-    `;
+    const documentName = documentFile.name;
+    const { success, filePath } = await saveFileToDisk(documentFile);
+    if (success) {
+      const documentPath = filePath;
+      const documentFileChecksum = await getFileChecksum(filePath);
 
-    const fileOutput = saveFileToDisk(documentFile);
+      await sql`
+        INSERT INTO documents (customer_id, document_type, document_name, document_description, document_path, document_file_check_sum, date)
+        VALUES (${customerId}, ${documentType}, ${documentName}, ${documentDescription}, ${documentPath}, ${documentFileChecksum}, ${date})
+      `;
+    } else {
+      console.log("File ${documentName} failed to be saved.");
+    }
   } catch (error) {
     // We'll log the error to the console for now
     console.error(error);
@@ -361,7 +376,7 @@ export async function updateDocument(
     documentType: formData.get("documentType"),
     documentName: formData.get("documentName"),
     documentDescription: formData.get("documentDescription"),
-    documentPath: formData.get("documentPath"),
+    //documentPath: formData.get("documentPath"),
   });
 
   if (!validatedFields.success) {
@@ -376,15 +391,16 @@ export async function updateDocument(
     documentType,
     documentName,
     documentDescription,
-    documentPath,
+    //documentPath,
   } = validatedFields.data;
+
+  // document_path = ${documentPath}
 
   try {
     await sql`
       UPDATE documents
       SET customer_id = ${customerId}, document_type = ${documentType}, 
-      document_name = ${documentName}, document_description = ${documentDescription},
-      document_path = ${documentPath}
+      document_name = ${documentName}, document_description = ${documentDescription}
       WHERE id = ${id}
     `;
   } catch (error) {

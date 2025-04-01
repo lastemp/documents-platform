@@ -2,9 +2,17 @@
 
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
-import { existsSync } from "fs";
+import { existsSync, promises as fs } from "fs";
+import { createHash } from "crypto";
 
 const UPLOAD_FILES_DIR = "uploads";
+
+// Function to calculate the checksum of a file
+export async function getFileChecksum(filePath: string): Promise<string> {
+  const fileBuffer = await fs.readFile(filePath);
+  const hash = createHash("sha256").update(fileBuffer).digest("hex");
+  return hash;
+}
 
 async function ensureUploadsFolder() {
   const uploadDir = path.join(process.cwd(), UPLOAD_FILES_DIR);
@@ -23,5 +31,9 @@ export async function saveFileToDisk(file: File) {
 
   await writeFile(filePath, buffer);
 
-  return { success: true, message: `File saved at ${filePath}` };
+  return {
+    success: true,
+    message: `File saved at ${filePath}`,
+    filePath: filePath,
+  };
 }
