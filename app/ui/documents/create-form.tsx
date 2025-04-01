@@ -9,11 +9,23 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button } from '@/app/ui/button';
 import { createDocument, State } from '@/app/lib/actions';
-import { useActionState } from 'react';
+import { useState, useActionState } from 'react';
 
 export default function Form({ customers }: { customers: CustomerField[] }) {
   const initialState: State = { message: null, errors: {} };
   const [state, formAction] = useActionState(createDocument, initialState);
+  //const [file, setFile] = useState<File | null>(null);
+
+  /*
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setFile(event.target.files[0]);
+    }
+  };
+  */
+
+  {/* <form action={formAction}> */}
+
   return (
     <form action={formAction}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
@@ -201,6 +213,9 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
             </div>
           </div>
         </div>
+        {/* <input type="file" onChange={handleFileChange} /> */}
+        {/* ✅ File Input */}
+        <input type="file" name="documentFile" className="mb-2 p-2 border rounded" required />
       </div>
       <div className="mt-6 flex justify-end gap-4">
         <Link

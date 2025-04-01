@@ -6,8 +6,12 @@ import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import { saveFileToDisk } from "@/app/lib/utils-files";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: false });
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024; //2MB
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "application/pdf"];
 
 const FormSchema = z.object({
   id: z.string(),
@@ -66,6 +70,27 @@ const DocumentFormSchema = z.object({
     })
     .min(1, { message: "document path must not be empty." }),
   date: z.string(),
+  // ✅ File validation
+  documentFile: z
+    .any()
+    .refine((file) => file !== undefined && file !== null, {
+      message: "File is required",
+    })
+    .refine((file) => file instanceof File, {
+      message: "Invalid file type",
+    })
+    //.refine((file) => file.size <= 2 * 1024 * 1024, {
+    .refine((file) => file.size <= MAX_FILE_SIZE, {
+      message: "File size must be under 2MB",
+    })
+    .refine(
+      (file) =>
+        //["image/png", "image/jpeg", "application/pdf"].includes(file.type),
+        ACCEPTED_IMAGE_TYPES.includes(file.type),
+      {
+        message: "Only PNG, JPEG, or PDF files are allowed",
+      }
+    ),
 });
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
@@ -283,10 +308,15 @@ export async function createDocument(prevState: State, formData: FormData) {
     documentName: formData.get("documentName"),
     documentDescription: formData.get("documentDescription"),
     documentPath: formData.get("documentPath"),
+    documentFile: formData.get("documentFile"),
   });
 
   // If form validation fails, return errors early. Otherwise, continue.
   if (!validatedFields.success) {
+    console.log(
+      "validatedFields errors: ",
+      validatedFields.error.flatten().fieldErrors
+    );
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: "Missing Fields. Failed to Create Document.",
@@ -300,6 +330,7 @@ export async function createDocument(prevState: State, formData: FormData) {
     documentName,
     documentDescription,
     documentPath,
+    documentFile,
   } = validatedFields.data;
   const date = new Date().toISOString().split("T")[0];
 
@@ -309,6 +340,8 @@ export async function createDocument(prevState: State, formData: FormData) {
       INSERT INTO documents (customer_id, document_type, document_name, document_description, document_path, date)
       VALUES (${customerId}, ${documentType}, ${documentName}, ${documentDescription}, ${documentPath}, ${date})
     `;
+
+    const fileOutput = saveFileToDisk(documentFile);
   } catch (error) {
     // We'll log the error to the console for now
     console.error(error);
