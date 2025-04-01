@@ -1,4 +1,4 @@
-import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, PlusIcon, TrashIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { deleteDocument } from '@/app/lib/actions';
 
@@ -10,6 +10,17 @@ export function CreateDocument() {
     >
       <span className="hidden md:block">Create Document</span>{' '}
       <PlusIcon className="h-5 md:ml-4" />
+    </Link>
+  );
+}
+
+export function VerifyDocument({ id }: { id: string }) {
+  return (
+    <Link
+    href={`/dashboard/documents/${id}/verify`}
+      className="rounded-md border p-2 hover:bg-gray-100"
+    >
+      <DocumentCheckIcon className="w-5" />
     </Link>
   );
 }

@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { UpdateDocument, DeleteDocument } from '@/app/ui/documents/buttons';
+import { UpdateDocument, DeleteDocument, VerifyDocument } from '@/app/ui/documents/buttons';
 import DocumentType from '@/app/ui/documents/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
 import { fetchFilteredDocuments } from '@/app/lib/data';
@@ -111,6 +111,7 @@ export default async function DocumentsTable({
                   </td>
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
+                      <VerifyDocument id={document.id} />
                       <UpdateDocument id={document.id} />
                       <DeleteDocument id={document.id} />
                     </div>

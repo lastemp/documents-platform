@@ -6,7 +6,11 @@ import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
-import { saveFileToDisk, getFileChecksum } from "@/app/lib/utils-files";
+import {
+  saveFileToDisk,
+  getFileChecksum,
+  saveFileToDiskWithUUID,
+} from "@/app/lib/utils-files";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: false });
 
@@ -111,6 +115,13 @@ const UpdateDocument = DocumentFormSchema.omit({
   id: true,
   date: true,
   documentFile: true,
+});
+const VerifyDocument = DocumentFormSchema.omit({
+  id: true,
+  customerId: true,
+  documentType: true,
+  documentDescription: true,
+  date: true,
 });
 
 export type State = {
@@ -405,6 +416,73 @@ export async function updateDocument(
     `;
   } catch (error) {
     return { message: "Database Error: Failed to Update Document." };
+  }
+
+  revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents");
+}
+
+export async function verifyDocument(
+  id: string,
+  prevState: State,
+  formData: FormData
+) {
+  // Validate form using Zod
+  const validatedFields = VerifyDocument.safeParse({
+    /*
+    customerId: formData.get("customerId"),
+    documentType: formData.get("documentType"),
+    documentDescription: formData.get("documentDescription"),
+    */
+    documentFile: formData.get("documentFile"),
+  });
+
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Create Document.",
+    };
+  }
+
+  // Prepare data for insertion into the database
+  const { documentFile } = validatedFields.data;
+
+  // Query the database
+  try {
+    const documentName = documentFile.name;
+    const { success, filePath } = await saveFileToDiskWithUUID(documentFile);
+    if (success && filePath != null) {
+      const documentPath = filePath;
+      const documentFileChecksum = await getFileChecksum(filePath);
+
+      const data = await sql`SELECT COUNT(*)
+        FROM documents
+        WHERE id = ${id} and
+        document_file_check_sum = ${documentFileChecksum}
+      `;
+
+      const count = data[0].count;
+      console.log("id: ", id);
+      console.log("documentPath: ", documentPath);
+      console.log("count: ", count);
+      console.log("documentFileChecksum: ", documentFileChecksum);
+      var message = "";
+      if (count > 0) {
+        message = `Document ${documentName} verified successfully!`;
+      } else {
+        message = `Document ${documentName} failed to be verified!`;
+      }
+      return {
+        errors: null, //new Error("test error"),
+        message: message,
+      };
+    } else {
+      console.log("File ${documentName} failed to be saved.");
+    }
+  } catch (error) {
+    // We'll log the error to the console for now
+    console.error(error);
   }
 
   revalidatePath("/dashboard/documents");
