@@ -338,3 +338,21 @@ export async function fetchDocumentById(id: string) {
     throw new Error("Failed to fetch document.");
   }
 }
+
+export async function fetchDocumentFileChecksumCount(
+  id: string,
+  documentFileChecksum: string
+) {
+  try {
+    const data = await sql`SELECT COUNT(*)
+      FROM documents
+      WHERE id = ${id} and
+      document_file_check_sum = ${documentFileChecksum}
+    `;
+
+    const count = data[0].count;
+    return count;
+  } catch (error) {
+    throw new Error("Failed to fetch count of document file checksum.");
+  }
+}

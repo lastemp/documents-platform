@@ -11,6 +11,7 @@ import {
   getFileChecksum,
   saveFileToDiskWithUUID,
 } from "@/app/lib/utils-files";
+import { fetchDocumentFileChecksumCount } from "@/app/lib/data";
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: false });
 
@@ -441,7 +442,7 @@ export async function verifyDocument(
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Missing Fields. Failed to Create Document.",
+      message: "Missing Fields. Failed to Verify Document.",
     };
   }
 
@@ -453,9 +454,10 @@ export async function verifyDocument(
     const documentName = documentFile.name;
     const { success, filePath } = await saveFileToDiskWithUUID(documentFile);
     if (success && filePath != null) {
-      const documentPath = filePath;
+      //const documentPath = filePath;
       const documentFileChecksum = await getFileChecksum(filePath);
 
+      /*
       const data = await sql`SELECT COUNT(*)
         FROM documents
         WHERE id = ${id} and
@@ -467,15 +469,20 @@ export async function verifyDocument(
       console.log("documentPath: ", documentPath);
       console.log("count: ", count);
       console.log("documentFileChecksum: ", documentFileChecksum);
-      var message = "";
+      */
+      const count = await fetchDocumentFileChecksumCount(
+        id,
+        documentFileChecksum
+      );
+
+      var verificationMessage = `Document [${documentName}] failed verification!`;
       if (count > 0) {
-        message = `Document ${documentName} verified successfully!`;
-      } else {
-        message = `Document ${documentName} failed to be verified!`;
+        verificationMessage = `Document [${documentName}] verified successfully!`;
       }
+
       return {
-        errors: null, //new Error("test error"),
-        message: message,
+        //errors: null, //new Error("test error"),
+        message: verificationMessage,
       };
     } else {
       console.log("File ${documentName} failed to be saved.");
