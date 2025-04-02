@@ -21,7 +21,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "application/pdf"];
 const FormSchema = z.object({
   id: z.string(),
   customerId: z.string({
-    invalid_type_error: "Please select a customer.",
+    invalid_type_error: "Please select a client.",
   }),
   amount: z.coerce
     .number()
@@ -36,9 +36,9 @@ const CustomerFormSchema = z.object({
   id: z.string(),
   name: z
     .string({
-      invalid_type_error: "Please enter customer name.",
+      invalid_type_error: "Please enter client name.",
     })
-    .min(1, { message: "Customer name must not be empty." }),
+    .min(1, { message: "Client name must not be empty." }),
   email: z
     .string({
       invalid_type_error: "Please enter email.",
@@ -54,7 +54,7 @@ const CustomerFormSchema = z.object({
 const DocumentFormSchema = z.object({
   id: z.string(),
   customerId: z.string({
-    invalid_type_error: "Please select a customer.",
+    invalid_type_error: "Please select a client.",
   }),
   documentType: z.enum(["agreement", "title deed", "last will"], {
     invalid_type_error: "Please select document type.",
@@ -109,11 +109,13 @@ const CreateInvoice = FormSchema.omit({ id: true, date: true });
 // Use Zod to update the expected types
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 const CreateCustomer = CustomerFormSchema.omit({ id: true });
-const UpdateCustomer = CustomerFormSchema.omit({ id: true });
+const UpdateCustomer = CustomerFormSchema.omit({ id: true, image: true });
 const CreateDocument = DocumentFormSchema.omit({ id: true, date: true });
 // const UpdateDocument = DocumentFormSchema.omit({ id: true, date: true });
 const UpdateDocument = DocumentFormSchema.omit({
   id: true,
+  customerId: true,
+  documentType: true,
   date: true,
   documentFile: true,
 });
@@ -244,7 +246,8 @@ export async function authenticate(
 }
 
 export async function createCustomer(
-  prevState: CustomerState,
+  //prevState: CustomerState,
+  prevState: State,
   formData: FormData
 ) {
   // Validate form using Zod
@@ -258,7 +261,7 @@ export async function createCustomer(
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Missing Fields. Failed to Create Customer.",
+      message: "Missing Fields. Failed to Create Client.",
     };
   }
 
@@ -276,8 +279,8 @@ export async function createCustomer(
     console.error(error);
   }
 
-  revalidatePath("/dashboard/customers");
-  redirect("/dashboard/customers");
+  revalidatePath("/dashboard/clients");
+  redirect("/dashboard/clients");
 }
 
 export async function updateCustomer(
@@ -288,7 +291,7 @@ export async function updateCustomer(
   const validatedFields = UpdateCustomer.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
-    image: formData.get("image"),
+    //image: formData.get("image"),
   });
 
   if (!validatedFields.success) {
@@ -298,20 +301,22 @@ export async function updateCustomer(
     };
   }
 
-  const { name, email, image } = validatedFields.data;
+  //const { name, email, image } = validatedFields.data;
+  //SET name = ${name}, email = ${email}, image_url = ${image}
 
+  const { name, email } = validatedFields.data;
   try {
     await sql`
       UPDATE customers
-      SET name = ${name}, email = ${email}, image_url = ${image}
+      SET name = ${name}, email = ${email}
       WHERE id = ${id}
     `;
   } catch (error) {
-    return { message: "Database Error: Failed to Update Customer." };
+    return { message: "Database Error: Failed to Update Client." };
   }
 
-  revalidatePath("/dashboard/customers");
-  redirect("/dashboard/customers");
+  revalidatePath("/dashboard/clients");
+  redirect("/dashboard/clients");
 }
 
 export async function deleteCustomer(id: string) {
@@ -321,7 +326,7 @@ export async function deleteCustomer(id: string) {
     // We'll log the error to the console for now
     console.error(error);
   }
-  revalidatePath("/dashboard/customers");
+  revalidatePath("/dashboard/clients");
 }
 
 export async function createDocument(prevState: State, formData: FormData) {
@@ -384,11 +389,10 @@ export async function updateDocument(
   formData: FormData
 ) {
   const validatedFields = UpdateDocument.safeParse({
-    customerId: formData.get("customerId"),
-    documentType: formData.get("documentType"),
-    documentName: formData.get("documentName"),
+    //customerId: formData.get("customerId"),
+    //documentType: formData.get("documentType"),
+    //documentName: formData.get("documentName"),
     documentDescription: formData.get("documentDescription"),
-    //documentPath: formData.get("documentPath"),
   });
 
   if (!validatedFields.success) {
@@ -399,20 +403,26 @@ export async function updateDocument(
   }
 
   const {
-    customerId,
-    documentType,
-    documentName,
+    //customerId,
+    //documentType,
+    //documentName,
     documentDescription,
-    //documentPath,
   } = validatedFields.data;
 
   // document_path = ${documentPath}
 
   try {
+    /*
     await sql`
       UPDATE documents
       SET customer_id = ${customerId}, document_type = ${documentType}, 
       document_name = ${documentName}, document_description = ${documentDescription}
+      WHERE id = ${id}
+    `;
+    */
+    await sql`
+      UPDATE documents
+      SET document_description = ${documentDescription}
       WHERE id = ${id}
     `;
   } catch (error) {
@@ -481,7 +491,7 @@ export async function verifyDocument(
       }
 
       return {
-        //errors: null, //new Error("test error"),
+        errors: {},
         message: verificationMessage,
       };
     } else {

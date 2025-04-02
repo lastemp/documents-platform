@@ -18,10 +18,10 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
   return (
     <form action={formAction}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
-        {/* Customer Name */}
+        {/* Client Name */}
         <div className="mb-4">
           <label htmlFor="customer" className="mb-2 block text-sm font-medium">
-            Choose customer
+            Choose client
           </label>
           <div className="relative">
             <select
@@ -33,7 +33,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
               required
             >
               <option value="" disabled>
-                Select a customer
+                Select a client
               </option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
