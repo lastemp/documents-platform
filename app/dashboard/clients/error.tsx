@@ -9,10 +9,18 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  /*
   useEffect(() => {
     // Optionally log the error to an error reporting service
     console.error(error);
   }, [error]);
+  */
+  useEffect(() => {
+    if (error) {
+      console.error(error);
+      // Optionally send to error tracking service
+    }
+  }, [error?.message]); // Only depend on the message string
  
   return (
     <main className="flex h-full flex-col items-center justify-center">
