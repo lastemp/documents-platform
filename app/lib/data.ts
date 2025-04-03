@@ -53,7 +53,7 @@ export async function fetchLatestInvoices() {
     throw new Error("Failed to fetch the latest invoices.");
   }
 }
-
+/*
 export async function fetchCardData() {
   try {
     // You can probably combine these into a single SQL query
@@ -82,6 +82,32 @@ export async function fetchCardData() {
       numberOfInvoices,
       totalPaidInvoices,
       totalPendingInvoices,
+    };
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch card data.");
+  }
+}
+*/
+export async function fetchCardData() {
+  try {
+    // You can probably combine these into a single SQL query
+    // However, we are intentionally splitting them to demonstrate
+    // how to initialize multiple queries in parallel with JS.
+    const documentCountPromise = sql`SELECT COUNT(*) FROM documents`;
+    const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
+
+    const data = await Promise.all([
+      documentCountPromise,
+      customerCountPromise,
+    ]);
+
+    const numberOfDocuments = Number(data[0][0].count ?? "0");
+    const numberOfCustomers = Number(data[1][0].count ?? "0");
+
+    return {
+      numberOfCustomers,
+      numberOfDocuments,
     };
   } catch (error) {
     console.error("Database Error:", error);
